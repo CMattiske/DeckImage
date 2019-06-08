@@ -36,7 +36,7 @@ public class MainFrame extends JFrame {
 	File defaultDirectory = new File("save/");
 	
 	private FileNameExtensionFilter filter_decks = new FileNameExtensionFilter("FFDecks export","txt");
-	private FileNameExtensionFilter filter_jpeg = new FileNameExtensionFilter("JPEG image","jpeg");
+	private FileNameExtensionFilter filter_jpeg = new FileNameExtensionFilter("JPEG image","jpg");
 	
 	public MainFrame(String title) {
 		super(title);
@@ -75,7 +75,14 @@ public class MainFrame extends JFrame {
 				int returnVal = fc.showSaveDialog(MainFrame.this);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					File file = fc.getSelectedFile();
-					saveImage2(file);
+					String filename = file.getAbsolutePath();
+					String[] filesplit = file.getAbsolutePath().split("\\.");
+					if (filesplit.length>0) {
+						filename = filesplit[0];
+					}
+					System.out.println(filename);
+					File newFile = new File(filename+".jpg");
+					saveImage2(newFile);
 				}	
 			} else if (source == file_load) {
 				fc.setFileFilter(filter_decks);
