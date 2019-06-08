@@ -7,7 +7,7 @@ import javax.imageio.ImageIO;
 
 public class Card {	
 	public enum Type {
-		FORWARD, BACKUP, SUMMON, MONSTER;
+		FORWARD, SUMMON, BACKUP, MONSTER;
 	}
 	
 	public static String dir_images = "AllCards/";
