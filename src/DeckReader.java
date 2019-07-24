@@ -7,18 +7,18 @@ import java.util.ArrayList;
 
 
 public class DeckReader {
-	ArrayList<Card> theDeck = new ArrayList<Card>(0);
+	ArrayList<CardInDeck> theDeck = new ArrayList<CardInDeck>(0);
 	
 	public DeckReader(File f) {
 		theDeck = readFile(f);
 	}
 	
-	public ArrayList<Card> getDeck() {
+	public ArrayList<CardInDeck> getDeck() {
 		return theDeck;
 	}
 	
-	private ArrayList<Card> readFile(File f) {
-		ArrayList<Card> list = new ArrayList<Card>(0);
+	private ArrayList<CardInDeck> readFile(File f) {
+		ArrayList<CardInDeck> list = new ArrayList<CardInDeck>(0);
 		
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(f));
@@ -49,24 +49,26 @@ public class DeckReader {
 						String id = line.substring(line.length()-6, line.length()-1);
 						int qty = Integer.parseInt(line.charAt(0)+"");
 
-						Card.Type type = Card.Type.FORWARD;
+						CardInDeck.Type type = CardInDeck.Type.FORWARD;
 						
 						switch (section) {
 						case 1:
-							type = Card.Type.FORWARD;
+							type = CardInDeck.Type.FORWARD;
 							break;
 						case 2:
-							type = Card.Type.SUMMON;
+							type = CardInDeck.Type.SUMMON;
 							break;
 						case 3:
-							type = Card.Type.BACKUP;
+							type = CardInDeck.Type.BACKUP;
 							break;
 						case 4:
-							type = Card.Type.MONSTER;
+							type = CardInDeck.Type.MONSTER;
 							break;
 						}
 						
-						list.add(new Card(name, id, qty, type));
+						for (int i=1; i<=qty; i++) {
+							list.add(new CardInDeck(name, id, type));
+						}
 					}
 
 

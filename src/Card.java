@@ -1,51 +1,104 @@
-import java.awt.Image;
-import java.io.File;
-import java.io.IOException;
 
-import javax.imageio.ImageIO;
-
-
-public class Card {	
-	public enum Type {
-		FORWARD, SUMMON, BACKUP, MONSTER;
+public class Card {
+	
+	public enum Type{
+		FORWARD, BACKUP, SUMMON, MONSTER;
 	}
 	
-	public static String dir_images = "AllCards/";
-	public static String default_image = "AllCards/cardback.jpg";
+	public enum Element{
+		FIRE, ICE, WIND, EARTH, LIGHTNING, WATER, LIGHT, DARK;
+	}
+	
+	public enum Rarity{
+		C, R, H, L, S;
+	}
 	
 	private String name;
-	private String id;
-	private Image img;
-	private int qty;
+	private String setID;
+	private String guid;
+
+	private Element element;
+	private int cost;
 	private Type type;
+	private boolean multicard;
+	private boolean exburst;
+	private String job;
+	private String category;
 	
-	public Card(String name, String id, int qty, Type type) {
+	private String text;
+	private int power;
+	private Rarity rarity;
+	
+	public Card(String name, String setID, String guid, Element element,
+			int cost, Type type, boolean multicard, boolean exburst, String job, String category, String text,
+			int power, Rarity rarity) {
+		super();
 		this.name = name;
-		this.id = id;
-		this.qty = qty;
+		this.setID = setID;
+		this.guid = guid;
+		this.element = element;
+		this.cost = cost;
 		this.type = type;
-		String image_filepath = Card.dir_images+id+".jpg";
-		try {
-			img = ImageIO.read(new File(image_filepath));
-		} catch (IOException e) {
-			try {
-				error("Couldn't read image file "+image_filepath);
-				img = ImageIO.read(new File(default_image));
-			} catch (IOException e2) {
-				error("Couldn't read default image file "+default_image);
-			}
-		}
+		this.multicard = multicard;
+		this.exburst = exburst;
+		this.job = job;
+		this.category = category;
+		this.text = text;
+		this.power = power;
+		this.rarity = rarity;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String getSetID() {
+		return setID;
+	}
+
+	public String getGuid() {
+		return guid;
+	}
+
+	public Element getElement() {
+		return element;
+	}
+
+	public int getCost() {
+		return cost;
+	}
+
+	public Type getType() {
+		return type;
 	}
 	
-	public Image getImage() {
-		return img;
+	public boolean isMulticard() {
+		return multicard;
 	}
 	
-	public int getQuantity() {
-		return qty;
+	public boolean isExburst() {
+		return exburst;
+	}
+
+	public String getJob() {
+		return job;
+	}
+
+	public String getCategory() {
+		return category;
+	}
+
+	public String getText() {
+		return text;
+	}
+
+	public int getPower() {
+		return power;
+	}
+
+	public Rarity getRarity() {
+		return rarity;
 	}
 	
-	private void error(String m) {
-		System.err.println(m);
-	}
+	
 }

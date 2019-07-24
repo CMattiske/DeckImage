@@ -3,6 +3,7 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -10,8 +11,10 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import javax.imageio.ImageIO;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -31,12 +34,16 @@ public class MainFrame extends JFrame {
 	private JMenu fileMenu = new JMenu("File");
 	private JMenuItem file_load = new JMenuItem("Load deck");
 	private JMenuItem file_save = new JMenuItem("Save image");
+	private JMenu specialMenu = new JMenu("Special");
+	private JMenuItem special_generate = new JMenuItem("Generate Opus IX deck");
 	
 	private JFileChooser fc = new JFileChooser();
 	File defaultDirectory = new File("save/");
 	
 	private FileNameExtensionFilter filter_decks = new FileNameExtensionFilter("FFDecks export","txt");
 	private FileNameExtensionFilter filter_jpeg = new FileNameExtensionFilter("JPEG image","jpg");
+	
+	private WWGenerator generator;
 	
 	public MainFrame(String title) {
 		super(title);
@@ -48,10 +55,13 @@ public class MainFrame extends JFrame {
 	    fc.setCurrentDirectory(defaultDirectory);
 		file_save.addActionListener(ml);
 		file_load.addActionListener(ml);
+		special_generate.addActionListener(ml);
 		
 		fileMenu.add(file_load);
 		fileMenu.add(file_save);
 		menuBar.add(fileMenu);
+		specialMenu.add(special_generate);
+		menuBar.add(specialMenu);
 		this.setJMenuBar(menuBar);
 		
 		this.add(deckImage);
@@ -64,7 +74,9 @@ public class MainFrame extends JFrame {
 			testDeck.add(new Card("Auron","1-01"+i%10,3,Card.Type.FORWARD));
 		}*/
 
-		deckImage.setDeck(new DeckReader(new File("src/Downloads/FFCC Fire Wind.txt")).getDeck());
+		//deckImage.setDeck(new DeckReader(new File("src/Downloads/FFCC Fire Wind.txt")).getDeck());
+		generator = new WWGenerator();
+		//deckImage.setDeck(generator.getList());
 	}
 	
 	private class MenuListener implements ActionListener {
@@ -91,6 +103,9 @@ public class MainFrame extends JFrame {
 					File file = fc.getSelectedFile();
 					deckImage.setDeck(new DeckReader(file).getDeck());
 				}	
+			} else if (source == special_generate) {
+				generator.generateList();
+				deckImage.setDeck(generator.getList());
 			}
 		}
 	}
@@ -99,8 +114,8 @@ public class MainFrame extends JFrame {
 		
 		private Color color_bg = Color.BLACK;
 		
-		private int width = DEFAULT_WIDTH;
-		private int height = DEFAULT_HEIGHT;
+		private int panel_width = DEFAULT_WIDTH;
+		private int panel_height = DEFAULT_HEIGHT;
 		
 		private int border = 10;
 		
@@ -109,18 +124,25 @@ public class MainFrame extends JFrame {
 		private int copyGap = 20;
 		private int cardGap = 20;
 		
-		private ArrayList<Card> deck = new ArrayList<Card>(0);
+		private ArrayList<CardInDeck> deck = new ArrayList<CardInDeck>(0);
+		private ArrayList<CardComponent> components = new ArrayList<CardComponent>(0);
+		
+		public ImagePanel() {
+			super();
+			setLayout(null);
+		}
 		
 		public int getWidth() {
-			return width;
+			return panel_width;
 		}
 		
 		public int getHeight() {
-			return height;
+			return panel_height;
 		}
 		
-		public void setDeck(ArrayList<Card> cards) {
+		public void setDeck(ArrayList<CardInDeck> cards) {
 			deck = cards;
+			Collections.sort(deck);
 			repaint();
 		}
 		
@@ -130,21 +152,56 @@ public class MainFrame extends JFrame {
 			setBackground(color_bg);
 			int x = border;
 			int y = border;
-			for (int i=0; i<deck.size(); i++) {
-				Card c = deck.get(i);
-				if (x+(c.getQuantity()-1)*copyGap>width-border-card_width) {
+			String currentID = "";
+			int qty = 1;
+			for (int i=0; i<deck.size(); i+=qty) {
+				CardInDeck c = deck.get(i);
+				//Find how many copies
+				currentID = c.getId();
+				qty = 1;
+				for (int j=i+1; j<deck.size(); j++) {
+					if (currentID.equals(deck.get(j).getId())) {
+						qty++;
+					} else { //End loop
+						j=deck.size();
+					}
+				}
+				if (x+(qty-1)*copyGap>panel_width-border*2-card_width) {
 					x = border;
 					y += card_height + cardGap;
 				}
-				for (int j=0;j<c.getQuantity();j++) {
+				for (int j=0;j<qty;j++) {
 					g.drawImage(c.getImage(), x, y, card_width, card_height, null);
 					x+=copyGap;	
 				}
 				x+=card_width;
 			}
 		}
+		
+		private class CardComponent extends JComponent {
+			
+			private int x;
+			private int y;
+			private int width;
+			private int height;
+			
+			private Image cardImage;
+			private int ratio;
+			
+			public CardComponent(int x, int y, CardInDeck card, int n) {
+				this.x = x;
+				this.y = y;
+				this.cardImage = card.getImage();
+				this.ratio = n;
+				
+				this.width = card_width + copyGap*(n-1);
+				this.height = card_height;
+			}	
+		}
 
 	}
+	
+
 	
 	//Credit: Top voted answer at https://stackoverflow.com/questions/19621105/save-image-from-jpanel-after-draw
 	//Can't use name as it contains characters that can't be saved
