@@ -3,6 +3,7 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;
@@ -12,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Random;
 
 import javax.imageio.ImageIO;
 import javax.swing.JComponent;
@@ -21,6 +23,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class MainFrame extends JFrame {
@@ -29,21 +32,28 @@ public class MainFrame extends JFrame {
 	public final static int DEFAULT_HEIGHT = 900;
 	
 	private ImagePanel deckImage = new ImagePanel();
+	private JScrollPane scrollPanel = new JScrollPane(deckImage);
 	
 	private JMenuBar menuBar = new JMenuBar();
 	private JMenu fileMenu = new JMenu("File");
 	private JMenuItem file_load = new JMenuItem("Load deck");
 	private JMenuItem file_save = new JMenuItem("Save image");
+	private JMenuItem file_saveOCTGN = new JMenuItem("Save OCTGN deck");
 	private JMenu specialMenu = new JMenu("Special");
 	private JMenuItem special_generate = new JMenuItem("Generate Opus IX deck");
+	private JMenuItem special_generateRandom = new JMenuItem("Generate random deck");
 	
 	private JFileChooser fc = new JFileChooser();
 	File defaultDirectory = new File("save/");
 	
 	private FileNameExtensionFilter filter_decks = new FileNameExtensionFilter("FFDecks export","txt");
 	private FileNameExtensionFilter filter_jpeg = new FileNameExtensionFilter("JPEG image","jpg");
+	private FileNameExtensionFilter filter_octgn = new FileNameExtensionFilter("OCTGN deck","o8d");
 	
 	private WWGenerator generator;
+	private AllCards allCards;
+	
+	private Random rand = new Random();
 	
 	public MainFrame(String title) {
 		super(title);
@@ -55,12 +65,16 @@ public class MainFrame extends JFrame {
 	    fc.setCurrentDirectory(defaultDirectory);
 		file_save.addActionListener(ml);
 		file_load.addActionListener(ml);
+		file_saveOCTGN.addActionListener(ml);
 		special_generate.addActionListener(ml);
+		special_generateRandom.addActionListener(ml);
 		
 		fileMenu.add(file_load);
 		fileMenu.add(file_save);
+		fileMenu.add(file_saveOCTGN);
 		menuBar.add(fileMenu);
 		specialMenu.add(special_generate);
+		specialMenu.add(special_generateRandom);
 		menuBar.add(specialMenu);
 		this.setJMenuBar(menuBar);
 		
@@ -76,7 +90,8 @@ public class MainFrame extends JFrame {
 
 		//deckImage.setDeck(new DeckReader(new File("src/Downloads/FFCC Fire Wind.txt")).getDeck());
 		generator = new WWGenerator();
-		//deckImage.setDeck(generator.getList());
+		allCards = new AllCards("src/Downloads/fullset.xml");
+		
 	}
 	
 	private class MenuListener implements ActionListener {
@@ -103,11 +118,50 @@ public class MainFrame extends JFrame {
 					File file = fc.getSelectedFile();
 					deckImage.setDeck(new DeckReader(file).getDeck());
 				}	
+			} else if (source == file_saveOCTGN) {
+				fc.setFileFilter(filter_octgn);
+				int returnVal = fc.showSaveDialog(MainFrame.this);
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					File file = fc.getSelectedFile();
+					String filename = file.getAbsolutePath();
+					String[] filesplit = file.getAbsolutePath().split("\\.");
+					if (filesplit.length>0) {
+						filename = filesplit[0];
+					}
+					System.out.println(filename);
+					new SetParser().writeOCTGNDeck(filename+".o8d", generateCardList(deckImage.getDeck()));
+				}
 			} else if (source == special_generate) {
 				generator.generateList();
 				deckImage.setDeck(generator.getList());
+				//new SetParser().writeOCTGNDeck("save/testlist.o8d", generateCardList(generator.getList()));
+			} else if (source == special_generateRandom) {
+				//Get 2 random elements
+				int r_element1 = rand.nextInt(6);
+				int r_element2 = rand.nextInt(6);
+				while (r_element2==r_element1) {
+					r_element2 = rand.nextInt(6);
+				}
+				ArrayList<Card> randomDeck = allCards.getRandomDeck(Card.Element.values()[r_element1], Card.Element.values()[r_element2]);
+				deckImage.setDeck(generateDeckList(randomDeck));
 			}
 		}
+	}
+	
+	//These are direct opposites, to convert ArrayList<Card> to ArrayList<CardInDeck> and vice versa
+	private ArrayList<Card> generateCardList(ArrayList<CardInDeck> deck) {
+		ArrayList<Card> list = new ArrayList<Card>(0);
+		for (int i=0; i<deck.size(); i++) {
+			list.add(allCards.getCardById(deck.get(i).getId()));
+		}
+		return list;
+	}	
+	private ArrayList<CardInDeck> generateDeckList(ArrayList<Card> list) {
+		ArrayList<CardInDeck> deck = new ArrayList<CardInDeck>(0);
+		for (int i=0; i<list.size(); i++) {
+			deck.add(new CardInDeck(list.get(i).getName(), list.get(i).getSetID(), CardInDeck.Type.values()[list.get(i).getType().ordinal()]));
+		}
+		return deck;
 	}
 	
 	private class ImagePanel extends JPanel {
@@ -146,18 +200,21 @@ public class MainFrame extends JFrame {
 			repaint();
 		}
 		
+		public ArrayList<CardInDeck> getDeck() {
+			return deck;
+		}
+		
 		@Override
 		public void paintComponent(Graphics g) {
 			super.paintComponent(g);
 			setBackground(color_bg);
 			int x = border;
 			int y = border;
-			String currentID = "";
 			int qty = 1;
 			for (int i=0; i<deck.size(); i+=qty) {
 				CardInDeck c = deck.get(i);
 				//Find how many copies
-				currentID = c.getId();
+				String currentID = c.getId();
 				qty = 1;
 				for (int j=i+1; j<deck.size(); j++) {
 					if (currentID.equals(deck.get(j).getId())) {

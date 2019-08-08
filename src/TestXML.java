@@ -7,13 +7,11 @@ public class TestXML {
 		SetParser parser = new SetParser();
 		
 		ArrayList<Card> fullList = new ArrayList<Card>(0);
-		
-		parser.parseFullSet("save/fullset.xml");
-		fullList.addAll(parser.getCardList());
-		
-		for (int i=0; i<fullList.size();i++) {
+		/*for (int i=0; i<fullList.size();i++) {
 			System.out.println(fullList.get(i).getName());
-		}
+		}*/
+		
+		AllCards allCards = new AllCards("src/Downloads/fullset.xml");
 		
 		/*parser.parseOCTGNSet("src/OCTGNSets/opus1/set.xml");
 		fullList.addAll(parser.getCardList());
@@ -40,9 +38,9 @@ public class TestXML {
 		fullList.addAll(parser.getCardList());
 		
 		parser.parseOCTGNSet("src/OCTGNSets/opus9/set.xml");
-		fullList.addAll(parser.getCardList());
+		fullList.addAll(parser.getCardList());*/
 		
-		parser.writeXML("save/fullset.xml", fullList);*/
+		parser.writeXML("save/fullset.xml", allCards.getFullList());
 	}
 	
 }
